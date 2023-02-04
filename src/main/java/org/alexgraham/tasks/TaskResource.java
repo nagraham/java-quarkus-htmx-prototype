@@ -11,6 +11,7 @@ import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.RestHeader;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -27,6 +28,9 @@ import java.util.UUID;
 public class TaskResource {
     private static final Logger LOG = Logger.getLogger(TaskResource.class);
 
+    @Inject
+    TaskService service;
+
     @CheckedTemplate
     public static class Template {
         public static native TemplateInstance list(List<Task> tasks);
@@ -38,7 +42,7 @@ public class TaskResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<List<Task>> list(@RestHeader("X-User-Id") String userId, @RestHeader("X-Foo") String foo) {
-        return Task.find("ownerid = ?1", userId).list();
+        return service.queryByOwner(userId);
     }
 
     // DEV NOTE: If you don't see any items listed, make sure you have the
@@ -48,8 +52,9 @@ public class TaskResource {
     @Produces(MediaType.TEXT_HTML)
     public Uni<TemplateInstance> list(@RestCookie String userId) {
         LOG.debug("Listing Tasks for User=" + userId);
-        return Task.<Task>find("ownerid = ?1", userId)
-                .list().onItem().transform(Template::list);
+        return service.queryByOwner(userId)
+                .onItem()
+                .transform(Template::list);
     }
 
     @GET
@@ -63,10 +68,8 @@ public class TaskResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> create(Task task, @RestHeader("X-User-Id") String ownerId) {
-        return User.<User>findById(UUID.fromString(ownerId))
-                .onItem().transform(user -> new Task(task.getTitle(), user))
-                .flatMap(taskToPersist -> Panache.<Task>withTransaction(taskToPersist::persist))
+    public Uni<Response> create(Task task, @RestHeader("X-User-Id") String userId) {
+        return service.persist(task.getTitle(), UUID.fromString(userId))
                 .onItem()
                 .transform(newTask -> Response
                         .created(URI.create("/tasks/" + newTask.id))
@@ -82,9 +85,7 @@ public class TaskResource {
             @RestCookie String userId,
             @RestHeader("HX-Request") boolean isHxRequest
     ) {
-        return User.<User>findById(UUID.fromString(userId))
-                .onItem().transform(user -> new Task(title, user))
-                .flatMap(taskToPersist -> Panache.<Task>withTransaction(taskToPersist::persist))
+        return service.persist(title, UUID.fromString(userId))
                 .onItem()
                 .transform(newTask -> {
                     if (isHxRequest) {
