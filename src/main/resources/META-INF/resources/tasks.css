@@ -1,0 +1,28 @@
+
+body {
+    font-size: 1.25rem;
+    font-family: system-ui,-apple-system,"Segoe UI","Roboto","Ubuntu","Cantarell","Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+
+.container {
+    max-width: 60%;
+    margin: auto;
+}
+
+h1 {
+    color: darkslategray;
+    font-size: 4rem;
+    font-weight: bolder;
+}
+
+input {
+    font-size: 1.25rem;
+    padding: 0.5rem;
+    width: 20rem;
+}
+
+.task-card {
+    border: lightgray 1px solid;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.5rem;
+}

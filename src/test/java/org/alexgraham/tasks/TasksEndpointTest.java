@@ -60,6 +60,7 @@ public class TasksEndpointTest {
 
         given()
                 .when()
+                .contentType(ContentType.JSON)
                 .get("/tasks/" + createdTask.id)
                 .then()
                 .statusCode(200)
@@ -79,6 +80,7 @@ public class TasksEndpointTest {
 
         Response response = given()
                 .when()
+                .contentType(ContentType.JSON)
                 .header(new Header("X-User-Id", user.getId().toString()))
                 .get("/tasks")
                 .then()
@@ -93,6 +95,7 @@ public class TasksEndpointTest {
 
         Response response = given()
                 .when()
+                .contentType(ContentType.JSON)
                 .header(new Header("X-User-Id", user.getId().toString()))
                 .get("/tasks")
                 .then()

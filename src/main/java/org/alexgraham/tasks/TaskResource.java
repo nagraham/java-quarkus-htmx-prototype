@@ -44,6 +44,7 @@ public class TaskResource {
     // DEV NOTE: If you don't see any items listed, make sure you have the
     // "userId" cookie set in your browser to a test ID (check import.sql).
     @GET
+    @Consumes(MediaType.TEXT_HTML)
     @Produces(MediaType.TEXT_HTML)
     public Uni<TemplateInstance> list(@RestCookie String userId) {
         LOG.debug("Listing Tasks for User=" + userId);
@@ -74,6 +75,7 @@ public class TaskResource {
     }
 
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
     public Uni<Response> create(
             @RestForm String title,
