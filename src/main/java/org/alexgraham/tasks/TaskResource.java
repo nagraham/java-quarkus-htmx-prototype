@@ -1,14 +1,13 @@
 package org.alexgraham.tasks;
 
-import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
 import io.smallrye.mutiny.Uni;
-import org.alexgraham.users.User;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestCookie;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.RestHeader;
+import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -16,6 +15,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -35,6 +35,11 @@ public class TaskResource {
     public static class Template {
         public static native TemplateInstance list(List<Task> tasks);
         public static native TemplateInstance task(Task task);
+    }
+
+    @ServerExceptionMapper
+    public Uni<Response> mapException(TaskNotFoundException e) {
+        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
     }
 
     // The "foo" rest header is just to make this API not clash with the html list
@@ -97,6 +102,36 @@ public class TaskResource {
                                 .header("Location", "/tasks")
                                 .build();
                     }
+                });
+    }
+
+    @POST
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Task> update(
+            Task task,
+            @PathParam("id") Long taskId,
+            @RestHeader("X-User-Id") UUID ignored_userId
+    ) {
+        return service.update(taskId, task);
+    }
+
+    @POST
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    public Uni<Response> update(
+            @PathParam("id") Long taskId,
+            @RestForm String title,
+            @RestCookie String userId,
+            @RestHeader("HX-Request") boolean isHxRequest
+    ) {
+        return service.update(taskId, new Task().setTitle(title))
+                .map(ignored -> {
+                    return Response.status(Response.Status.FOUND)
+                            .header("Location", "/tasks")
+                            .build();
                 });
     }
 }

@@ -1,3 +1,13 @@
-<div class="task task-card" id="task-{task.id}">
-    <span>{task.getTitle()}</span>
+<div class="task task-card" id="task-{task.id}" x-data="{ isEditing: false }">
+
+    <div x-on:dblclick="isEditing = ! isEditing" class="task-title">
+        <span>{task.getTitle()}</span>
+    </div>
+
+    <div class="edit-task-title-form" x-show="isEditing">
+        <form action="/tasks/{task.id}" method="POST">
+            <input @keyup.escape="isEditing = ! isEditing" class="edit" name="title" value="{task.getTitle()}">
+        </form>
+    </div>
+
 </div>

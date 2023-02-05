@@ -104,6 +104,56 @@ public class TasksEndpointTest {
         assertThat(response.jsonPath().getList("title"), is(empty()));
     }
 
+    @Test
+    void updateTask_whenTaskExists_updatesSuccessfully() {
+        User user = createUser("test-user-updating-tasks");
+        Task task = createTask(user, "original-title");
+
+        Response response = given()
+                .when()
+                .body(String.format(
+                        """
+                        {
+                            "title": "%s"
+                        }
+                        """,
+                        "updated-title"))
+                .header(new Header("X-User-Id", user.getId().toString()))
+                .contentType(ContentType.JSON)
+                .post("/tasks/" + task.id)
+                .then()
+                .statusCode(200)
+                .extract().response();
+        Task updatedTask = response.getBody().as(Task.class);
+
+        assertThat(updatedTask.getTitle(), is("updated-title"));
+    }
+
+    @Test
+    void updateTask_whenTaskDoesntExist_return404() {
+        User user = createUser("test-user-updating-tasks");
+
+        Response response = given()
+                .when()
+                .body(String.format(
+                        """
+                        {
+                            "title": "%s"
+                        }
+                        """,
+                        "updated-title"))
+                .header(new Header("X-User-Id", user.getId().toString()))
+                .contentType(ContentType.JSON)
+                .post("/tasks/" + Long.toString(123))
+                .then()
+                .statusCode(404)
+                .extract().response();
+    }
+
+    /* ********************************************************
+     *   HELPER METHODS
+     * ******************************************************** */
+
     User createUser(String name) {
         Response response = given()
                 .when()
@@ -141,5 +191,7 @@ public class TasksEndpointTest {
                 .response();
         return response.getBody().as(Task.class);
     }
+
+
 
 }

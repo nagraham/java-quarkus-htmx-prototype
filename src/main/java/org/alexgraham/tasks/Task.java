@@ -33,6 +33,11 @@ public class Task extends PanacheEntity {
         return title;
     }
 
+    public Task setTitle(String newTitle) {
+        this.title = newTitle;
+        return this;
+    }
+
     public User getOwner() {
         return owner;
     }
