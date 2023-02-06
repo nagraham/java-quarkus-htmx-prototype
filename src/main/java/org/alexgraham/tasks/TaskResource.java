@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Path("/tasks")
 @ApplicationScoped
@@ -133,5 +134,36 @@ public class TaskResource {
                             .header("Location", "/tasks")
                             .build();
                 });
+    }
+
+    private record RerankParams(List<Long> rankings) {}
+
+    @POST
+    @Path("/rerank")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Response> rerank(
+            RerankParams params,
+            @RestHeader("X-User-Id") UUID userId
+    ) {
+        LOG.info("rankings: " + params.rankings.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        return service.saveTaskRankings(userId, params.rankings())
+                .map(ignored -> Response.ok().build());
+    }
+
+    @POST
+    @Path("/rerank")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    public Uni<Response> rerank(
+            @RestForm("item") List<Long> ranks,
+            @RestCookie UUID userId,
+            @RestHeader("HX-Request") boolean isHxRequest
+    ) {
+        LOG.info("item: " + ranks.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        return service.saveTaskRankings(userId, ranks)
+                .map(ignored -> Response.status(Response.Status.FOUND)
+                        .header("Location", "/tasks")
+                        .build());
     }
 }

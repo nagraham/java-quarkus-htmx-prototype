@@ -1,4 +1,5 @@
 <div class="task task-card" id="task-{task.id}" x-data="{ isEditing: false }">
+    <input type="hidden" name="item" value="{task.id}">
 
     <div x-on:dblclick="isEditing = ! isEditing" class="task-title">
         <span>{task.getTitle()}</span>

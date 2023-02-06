@@ -69,6 +69,13 @@
             <version>1.8.5</version>
         </dependency>
 
+        <!-- for sorting components in the UX -->
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>sortablejs</artifactId>
+            <version>1.15.0</version>
+        </dependency>
+
         <!-- TEST DEPENDENCIES -->
 
         <dependency>

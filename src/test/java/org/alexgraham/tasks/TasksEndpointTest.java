@@ -5,7 +5,12 @@ import io.restassured.http.ContentType;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 import org.alexgraham.users.User;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -133,7 +138,7 @@ public class TasksEndpointTest {
     void updateTask_whenTaskDoesntExist_return404() {
         User user = createUser("test-user-updating-tasks");
 
-        Response response = given()
+        given()
                 .when()
                 .body(String.format(
                         """
@@ -146,8 +151,79 @@ public class TasksEndpointTest {
                 .contentType(ContentType.JSON)
                 .post("/tasks/" + Long.toString(123))
                 .then()
-                .statusCode(404)
-                .extract().response();
+                .statusCode(404);
+    }
+
+    @Nested
+    @DisplayName("Reranking Tasks")
+    class RerankingTasks {
+
+        @Test
+        void rerankingSomeTasks() {
+            User user = createUser("test-reranking-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            Task task3 = createTask(user, "task-3");
+            Task task4 = createTask(user, "task-4");
+
+            given()
+                    .when()
+                    .body(String.format("""
+                            {
+                                "rankings": [%d, %d, %d, %d]
+                            }
+                            """, task3.id, task1.id, task2.id, task4.id))
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/rerank")
+                    .then()
+                    .statusCode(200);
+
+            List<Task> reRankedTasks = listTasksByUser(user);
+            assertThat(
+                    reRankedTasks.stream().map(Task::getTitle).collect(Collectors.toList()),
+                    contains("task-3", "task-1", "task-2", "task-4"));
+        }
+
+        @Test
+        void multipleReRankings_respectsTheLastRank() {
+            User user = createUser("test-reranking-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            Task task3 = createTask(user, "task-3");
+            Task task4 = createTask(user, "task-4");
+
+            given()
+                    .when()
+                    .body(String.format("""
+                            {
+                                "rankings": [%d, %d, %d, %d]
+                            }
+                            """, task3.id, task1.id, task2.id, task4.id))
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/rerank")
+                    .then()
+                    .statusCode(200);
+
+            given()
+                    .when()
+                    .body(String.format("""
+                            {
+                                "rankings": [%d, %d, %d, %d]
+                            }
+                            """, task4.id, task1.id, task2.id, task3.id))
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/rerank")
+                    .then()
+                    .statusCode(200);
+
+            List<Task> reRankedTasks = listTasksByUser(user);
+            assertThat(
+                    reRankedTasks.stream().map(Task::getTitle).collect(Collectors.toList()),
+                    contains("task-4", "task-1", "task-2", "task-3"));
+        }
     }
 
     /* ********************************************************
@@ -192,6 +268,18 @@ public class TasksEndpointTest {
         return response.getBody().as(Task.class);
     }
 
-
+    List<Task> listTasksByUser(User user) {
+        return given()
+                .when()
+                .contentType(ContentType.JSON)
+                .header(new Header("X-User-Id", user.getId().toString()))
+                .get("/tasks")
+                .then()
+                .statusCode(200)
+                .extract()
+                .body()
+                .jsonPath()
+                .getList(".", Task.class);
+    }
 
 }
