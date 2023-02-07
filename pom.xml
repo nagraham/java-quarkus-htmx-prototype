@@ -76,6 +76,13 @@
             <version>1.15.0</version>
         </dependency>
 
+        <!-- Feather for beautiful icons for buttons, controls, etc -->
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>feather-icons</artifactId>
+            <version>4.28.0</version>
+        </dependency>
+
         <!-- TEST DEPENDENCIES -->
 
         <dependency>

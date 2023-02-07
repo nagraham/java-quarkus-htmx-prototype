@@ -8,14 +8,17 @@
                 <input class="new-task" name="title" placeholder="What do you need to do?" />
             </form>
 
-            <form class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-target="#task-app" hx-swap="none">
+            {!
+              Example for Sortable: https://htmx.org/examples/sortable/
+              Use a <div> instead of a form, so that we don't have nested forms for editing the task
+            !}
+            <div class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-swap="none" hx-include="this">
                 <div class="task-list" id="task-list">
                     {#for task in tasks }
                         {#include TaskResource/task.html task=task /}
                     {/for}
                 </div>
-            </form>
-
+            </div>
         </div>
     {/body}
 {/include}

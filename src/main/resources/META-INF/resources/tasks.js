@@ -9,6 +9,9 @@
     });
 
     htmx.onLoad(function(content) {
+        // This is required to render the Feather icons
+        feather.replace();
+
         // make the Tasks in task-lists sortable
         let sortables = content.querySelectorAll(".sortable .task-list");
         for (let i = 0; i < sortables.length; i++) {

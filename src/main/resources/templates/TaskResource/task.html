@@ -1,14 +1,32 @@
 <div class="task task-card" id="task-{task.id}" x-data="{ isEditing: false }">
     <input type="hidden" name="item" value="{task.id}">
 
-    <div x-on:dblclick="isEditing = ! isEditing" class="task-title">
-        <span>{task.getTitle()}</span>
-    </div>
+    {! Task Title !}
+    <div class="task-title">
+        <span x-on:dblclick="isEditing = ! isEditing"
+              x-show="!isEditing"
+              title="Double-click to edit the task's title">
+            {task.getTitle()}
+        </span>
 
-    <div class="edit-task-title-form" x-show="isEditing">
-        <form action="/tasks/{task.id}" method="POST" hx-target="#task-{task.id}" hx-swap="outerHTML">
-            <input @keyup.escape="isEditing = ! isEditing" class="edit" name="title" value="{task.getTitle()}">
-        </form>
+        {! Edit Task Title Form !}
+        <div class="edit-task-title-form" x-show="isEditing">
+            <form id="task-{task.id}-edit-title" hx-post="/tasks/{task.id}" hx-target="#task-{task.id}" hx-swap="outerHTML">
+                <input @keyup.escape="isEditing = ! isEditing"
+                       class="edit"
+                       name="title"
+                       value="{task.getTitle()}"
+                       title="Press ENTER to save; press ESC to cancel">
+                {! enclose the feather icon in a span b/c the node gets swaps with a svg type !}
+                <button type="submit" class="icon-btn">
+                    <i data-feather="check"></i>
+                </button>
+                {! you need to use type=button so that this doesn't submit the form !}
+                <button type="button" class="icon-btn" x-on:click="isEditing = false">
+                    <i data-feather="x"></i>
+                </button>
+            </form>
+        </div>
     </div>
 
 </div>
