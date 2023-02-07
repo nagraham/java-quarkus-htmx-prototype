@@ -6,7 +6,7 @@
     </div>
 
     <div class="edit-task-title-form" x-show="isEditing">
-        <form action="/tasks/{task.id}" method="POST">
+        <form action="/tasks/{task.id}" method="POST" hx-target="#task-{task.id}" hx-swap="outerHTML">
             <input @keyup.escape="isEditing = ! isEditing" class="edit" name="title" value="{task.getTitle()}">
         </form>
     </div>

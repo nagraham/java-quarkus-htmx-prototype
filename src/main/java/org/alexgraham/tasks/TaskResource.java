@@ -92,18 +92,8 @@ public class TaskResource {
             @RestHeader("HX-Request") boolean isHxRequest
     ) {
         return service.persist(title, UUID.fromString(userId))
-                .onItem()
-                .transform(newTask -> {
-                    if (isHxRequest) {
-                        return Response.ok(Template.task(newTask))
-                                .header("HX-Trigger", "clear-add-task")
-                                .build();
-                    } else {
-                        return Response.status(Response.Status.FOUND)
-                                .header("Location", "/tasks")
-                                .build();
-                    }
-                });
+                .map(newTask -> postResponse(isHxRequest, "/tasks", Response.ok(Template.task(newTask))
+                        .header("HX-Trigger", "clear-add-task")));
     }
 
     @POST
@@ -129,11 +119,7 @@ public class TaskResource {
             @RestHeader("HX-Request") boolean isHxRequest
     ) {
         return service.update(taskId, new Task().setTitle(title))
-                .map(ignored -> {
-                    return Response.status(Response.Status.FOUND)
-                            .header("Location", "/tasks")
-                            .build();
-                });
+                .map(updatedTask -> postResponse(isHxRequest, "/tasks", Response.ok(Template.task(updatedTask))));
     }
 
     private record RerankParams(List<Long> rankings) {}
@@ -162,8 +148,25 @@ public class TaskResource {
     ) {
         LOG.info("item: " + ranks.stream().map(Object::toString).collect(Collectors.joining(", ")));
         return service.saveTaskRankings(userId, ranks)
-                .map(ignored -> Response.status(Response.Status.FOUND)
-                        .header("Location", "/tasks")
-                        .build());
+                .map(ignored -> postResponse(isHxRequest, "/tasks", Response.noContent()));
+    }
+
+    /**
+     * A helper function for returning an HTML post response.
+     *
+     * @param isHxRequest       Input header from the front-end; if false, we will fall back to a standard
+     *                          302 response based on a form submit.
+     * @param path              The re-direct path (for a 302 redirect). HTMX will put this path into
+     *                          the browser's nav bar.
+     * @param responseBuilder   The partially built Response builder from
+     * @return                  The Response.
+     */
+    private Response postResponse(boolean isHxRequest, String path, Response.ResponseBuilder responseBuilder) {
+        if (isHxRequest) {
+            return responseBuilder.header("HX-Push", path).build();
+        } else {
+            // backup for progressive enhancement
+            return Response.status(Response.Status.FOUND).header("Location", path).build();
+        }
     }
 }

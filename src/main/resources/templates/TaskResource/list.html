@@ -8,7 +8,7 @@
                 <input class="new-task" name="title" placeholder="What do you need to do?" />
             </form>
 
-            <form class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-target="#task-app" hx-swap="outerHTML">
+            <form class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-target="#task-app" hx-swap="none">
                 <div class="task-list" id="task-list">
                     {#for task in tasks }
                         {#include TaskResource/task.html task=task /}
