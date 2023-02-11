@@ -1,6 +1,7 @@
 package org.alexgraham.tasks;
 
 import io.quarkus.hibernate.reactive.panache.common.runtime.ReactiveTransactional;
+import io.quarkus.panache.common.Sort;
 import io.smallrye.mutiny.Uni;
 import org.alexgraham.users.User;
 
@@ -29,8 +30,9 @@ public class TaskService {
      */
     @ReactiveTransactional
     public Uni<List<Task>> queryByOwner(String ownerId) {
-        // Get the tasks for the owner
-        Uni<List<Task>> taskUni = Task.<Task>find("ownerid = ?1", ownerId).list();
+        // Get the tasks for the owner (the base sort is by id for now)
+        // TODO: sort by creation date
+        Uni<List<Task>> taskUni = Task.<Task>find("ownerid = ?1", Sort.by("id"), ownerId).list();
 
         // Get the TaskRanking
         Uni<TaskRanking> taskRankingUni = TaskRanking.<TaskRanking>find("ownerid = ?1", ownerId)
@@ -76,10 +78,21 @@ public class TaskService {
                 .flatMap(taskRanking -> taskRanking.setRankedTaskIds(rankings).persist());
     }
 
+    /**
+     * Updates mutable data attributes on the {@Link Task}.
+     *
+     * @param taskId            The id of the Task to update.
+     * @param taskWithUpdates   A Task object which contains mutable attributes to modify. If any
+     *                          attributes are null, they will be ignored.
+     * @return
+     */
     @ReactiveTransactional
     public Uni<Task> update(Long taskId, Task taskWithUpdates) {
         return Task.<Task>findById(taskId)
                 .onItem().ifNull().failWith(new TaskNotFoundException())
-                .flatMap(task -> task.setTitle(taskWithUpdates.getTitle()).persist());
+                .flatMap(task -> task
+                        .setTitle(taskWithUpdates.getTitle())
+                        .setDescription(taskWithUpdates.getDescription())
+                        .persist());
     }
 }

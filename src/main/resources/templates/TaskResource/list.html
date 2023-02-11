@@ -10,9 +10,11 @@
 
             {!
               Example for Sortable: https://htmx.org/examples/sortable/
-              Use a <div> instead of a form, so that we don't have nested forms for editing the task
+              Use a <div> instead of a form, so that we don't have nested forms for editing the task.
+              We have to specify [name='item'] so that it doesn't include form/input data from
+              all the nested forms within the Task template.
             !}
-            <div class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-swap="none" hx-include="this">
+            <div class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-swap="none" hx-include="[name='item']">
                 <div class="task-list" id="task-list">
                     {#for task in tasks }
                         {#include TaskResource/task.html task=task /}

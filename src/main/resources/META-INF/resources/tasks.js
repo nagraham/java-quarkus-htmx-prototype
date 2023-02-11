@@ -16,7 +16,6 @@
         let sortables = content.querySelectorAll(".sortable .task-list");
         for (let i = 0; i < sortables.length; i++) {
             let sortable = sortables[i];
-            console.log(sortable)
             new Sortable(sortable, {
                 animation: 150,
                 ghostClass: 'blue-background-class'

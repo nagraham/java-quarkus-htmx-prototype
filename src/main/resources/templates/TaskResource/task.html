@@ -1,8 +1,18 @@
-<div class="task task-card" id="task-{task.id}" x-data="{ isEditing: false }">
+{! This variable allows the backend to control whether to render the Task with the detail pane open;
+   for instance, when the user is editing data in the detail pane !}
+{@java.lang.Boolean isViewingDetails}
+
+<div class="task task-card"
+     id="task-{task.id}"
+     x-data="{ isEditing: false, isViewingDetails: {isViewingDetails ?: false}, isEditingDesc: false }">
+
+    {! This hidden input is used in the re-rank Task request !}
     <input type="hidden" name="item" value="{task.id}">
 
     {! Task Title !}
-    <div class="task-title">
+    <div class="task-title flex-row flex-align-center">
+
+        {! Display the title !}
         <span x-on:dblclick="isEditing = ! isEditing"
               x-show="!isEditing"
               title="Double-click to edit the task's title">
@@ -11,20 +21,86 @@
 
         {! Edit Task Title Form !}
         <div class="edit-task-title-form" x-show="isEditing">
-            <form id="task-{task.id}-edit-title" hx-post="/tasks/{task.id}" hx-target="#task-{task.id}" hx-swap="outerHTML">
-                <input @keyup.escape="isEditing = ! isEditing"
+            <form id="task-{task.id}-edit-title"
+                  class="flex-row flex-align-center"
+                  hx-post="/tasks/{task.id}"
+                  hx-target="#task-{task.id}"
+                  hx-swap="outerHTML"
+            >
+                <input @keyup.escape="isEditing = false"
                        class="edit"
                        name="title"
                        value="{task.getTitle()}"
                        title="Press ENTER to save; press ESC to cancel">
                 {! enclose the feather icon in a span b/c the node gets swaps with a svg type !}
-                <button type="submit" class="icon-btn">
+                <button type="submit" class="icon-btn pad-3">
                     <i data-feather="check"></i>
                 </button>
                 {! you need to use type=button so that this doesn't submit the form !}
-                <button type="button" class="icon-btn" x-on:click="isEditing = false">
+                <button type="button" class="icon-btn pad-3" x-on:click="isEditing = false">
                     <i data-feather="x"></i>
                 </button>
+            </form>
+        </div>
+
+        {! Task Controls contain other controls for operating on the task !}
+        <div class="task-controls mg-left-auto">
+            {! Open/Close the Task Details !}
+            <button type="button"
+                    class="icon-btn"
+                    title="Click to view the Task Details"
+                    x-show="!isViewingDetails"
+                    x-on:click="isViewingDetails = ! isViewingDetails">
+                <i data-feather="plus-square"></i>
+            </button>
+            <button type="button"
+                    class="icon-btn"
+                    title="Click to close the Task Details"
+                    x-show="isViewingDetails"
+                    x-on:click="isViewingDetails = ! isViewingDetails">
+                <i data-feather="minus-square"></i>
+            </button>
+        </div>
+    </div>
+
+    {! Task Details Pane !}
+    <div class="task-details" x-show="isViewingDetails">
+
+        {! Task Description !}
+        <div class="task-description">
+            <h2 class="fnt-6 mg-clear mg-btm-2">Description</h2>
+
+            {! Display the description !}
+            <div class="light-gray-border pad-3" x-on:dblclick="isEditingDesc = ! isEditingDesc" x-show="!isEditingDesc">
+                {#if task.getDescription() == null || task.getDescription().isEmpty()}
+                    <span>...</span>
+                {#else}
+                    <p class="preserve-whitespace">{task.getDescription()}</p>
+                {/if}
+            </div>
+
+            {! Form to edit the Task description !}
+            <form class="flex-col"
+                  hx-post="/tasks/{task.id}"
+                  hx-target="#task-{task.id}"
+                  hx-swap="outerHTML"
+                  {! Setting this header will mean the new HTML partial will have the Detail View open !}
+                  hx-headers='\{ "X-Override-IsViewingDetails": true }'
+                  x-show="isEditingDesc"
+            >
+                <textarea class="ht-10 preserve-whitespace"
+                          @keyup.escape="isEditingDesc = false"
+                          placeholder="Enter new description..."
+                          name="description">{task.getDescription()}</textarea>
+                <div class="flex-row">
+                    <button type="submit" class="icon-btn pad-3">
+                        <i data-feather="check"></i>
+                    </button>
+                    {! you need to use type=button so that this doesn't submit the form !}
+                    <button type="button" class="icon-btn pad-3" x-on:click="isEditingDesc = false">
+                        <i data-feather="x"></i>
+                    </button>
+                </div>
             </form>
         </div>
     </div>

@@ -96,6 +96,14 @@ public class TaskResource {
                         .header("HX-Trigger", "clear-add-task")));
     }
 
+    /**
+     * JSON endpoint for updating a Task.
+     *
+     * @param task              A Task object containing attributes to update. Any null attributes will be ignored.
+     * @param taskId            The ID of the task to update (specified on the path).
+     * @param ignored_userId    The user ID (currently, this is a silly proxy until I have auth/sessions).
+     * @return                  A Response containing the updated Task.
+     */
     @POST
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -108,6 +116,18 @@ public class TaskResource {
         return service.update(taskId, task);
     }
 
+    /**
+     * The HTML ndpoint for updating a Task.
+     *
+     * @param taskId            The ID of the task to update (specified on the path).
+     * @param title             (Optional) The title of the task. If not provided, it is ignored.
+     * @param description       (Optional) The Task description. If not provided, it is ignored.
+     * @param userId            The user ID (currently, this is a silly proxy until I have auth/sessions).
+     * @param isHxRequest       Whether the incoming request is via HTMX (else, it will return a standard 302 resp).
+     * @param isViewingDetails  This header is passed to the template as a view control, whether the Task should
+     *                          be rendered with its detail pane open. This allows the view to control this scenario.
+     * @return                  A Response with the given Task template.
+     */
     @POST
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -115,11 +135,15 @@ public class TaskResource {
     public Uni<Response> update(
             @PathParam("id") Long taskId,
             @RestForm String title,
+            @RestForm String description,
             @RestCookie String userId,
-            @RestHeader("HX-Request") boolean isHxRequest
+            @RestHeader("HX-Request") boolean isHxRequest,
+            @RestHeader("X-Override-IsViewingDetails") boolean isViewingDetails
     ) {
-        return service.update(taskId, new Task().setTitle(title))
-                .map(updatedTask -> postResponse(isHxRequest, "/tasks", Response.ok(Template.task(updatedTask))));
+        LOG.info(String.format("Title: %s; Description: %s, isViewing: %b", title, description, isViewingDetails));
+        return service.update(taskId, new Task().setTitle(title).setDescription(description))
+                .map(updatedTask -> postResponse(isHxRequest, "/tasks",
+                        Response.ok(Template.task(updatedTask).data("isViewingDetails", isViewingDetails))));
     }
 
     private record RerankParams(List<Long> rankings) {}

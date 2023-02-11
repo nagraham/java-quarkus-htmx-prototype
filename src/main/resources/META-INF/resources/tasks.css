@@ -1,7 +1,20 @@
 
+:root {
+    --default-font: system-ui,-apple-system,"Segoe UI","Roboto","Ubuntu","Cantarell","Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+
 body {
-    font-size: 1.25rem;
-    font-family: system-ui,-apple-system,"Segoe UI","Roboto","Ubuntu","Cantarell","Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    font-size: 1rem;
+    font-family: var(--default-font);
+}
+
+p {
+    margin: 0;
+}
+
+textarea {
+    font-size: 1.00rem;
+    font-family: var(--default-font);
 }
 
 .container {
@@ -16,7 +29,7 @@ h1 {
 }
 
 input {
-    font-size: 1.25rem;
+    font-size: 1rem;
     padding: 0.5rem;
     width: 20rem;
 }
@@ -31,4 +44,96 @@ input {
     border: none;
     background: inherit;
     padding: 0;
+}
+
+/*
+1 - 0.15rem
+2 - 0.25rem
+3 - 0.50rem
+4 - 0.75rem
+5 - 1.00rem
+6 - 1.25rem
+7 - 1.50rem
+8 - 2.00rem
+9 - 3.00rem
+10 - 4.00rem
+ */
+
+/*
+ * FLEX CLASSES
+ */
+
+.flex-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.flex-align-center {
+    align-items: center;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+ * PADDING CLASSES
+ */
+
+.pad-3 {
+    padding: 0.5rem;
+}
+
+/*
+ * MARGIN CLASSES
+ */
+
+.mg-clear {
+    margin: 0;
+}
+
+.mg-btm-2 {
+    margin-bottom: 0.25rem;
+}
+
+.mg-left-auto {
+    margin-left: auto;
+}
+
+/*
+ * FONT CLASSES
+ */
+
+.fnt-5 {
+    font-size: 1.00rem;
+}
+
+.fnt-6 {
+    font-size: 1.25rem;
+}
+
+/*
+ * Borders
+ */
+
+.light-gray-border {
+    border: thin solid lightgray;
+}
+
+/*
+ * Element Sizing
+ */
+
+.ht-10 {
+    height: 4rem;
+}
+
+/*
+ * Form Styles
+ */
+
+.preserve-whitespace {
+    white-space: pre-wrap;
 }

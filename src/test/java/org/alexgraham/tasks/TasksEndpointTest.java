@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.blankString;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -109,49 +111,107 @@ public class TasksEndpointTest {
         assertThat(response.jsonPath().getList("title"), is(empty()));
     }
 
-    @Test
-    void updateTask_whenTaskExists_updatesSuccessfully() {
-        User user = createUser("test-user-updating-tasks");
-        Task task = createTask(user, "original-title");
+    @Nested
+    @DisplayName("Updating Task")
+    class UpdateTask {
 
-        Response response = given()
-                .when()
-                .body(String.format(
-                        """
-                        {
-                            "title": "%s"
-                        }
-                        """,
-                        "updated-title"))
-                .header(new Header("X-User-Id", user.getId().toString()))
-                .contentType(ContentType.JSON)
-                .post("/tasks/" + task.id)
-                .then()
-                .statusCode(200)
-                .extract().response();
-        Task updatedTask = response.getBody().as(Task.class);
+        @Test
+        void whenUpdatingOnlyTheTaskTitle_updatesSuccessfully() {
+            User user = createUser("test-user-updating-tasks");
+            Task task = createTask(user, "original-title");
 
-        assertThat(updatedTask.getTitle(), is("updated-title"));
-    }
+            Task updatedTask = updateTask(user, task.id, String.format(
+                    """
+                    {
+                        "title": "%s"
+                    }
+                    """, "updated-title"));
 
-    @Test
-    void updateTask_whenTaskDoesntExist_return404() {
-        User user = createUser("test-user-updating-tasks");
+            assertThat(updatedTask.getTitle(), is("updated-title"));
+        }
 
-        given()
-                .when()
-                .body(String.format(
-                        """
-                        {
-                            "title": "%s"
-                        }
-                        """,
-                        "updated-title"))
-                .header(new Header("X-User-Id", user.getId().toString()))
-                .contentType(ContentType.JSON)
-                .post("/tasks/" + Long.toString(123))
-                .then()
-                .statusCode(404);
+        @Test
+        void whenUpdatingOnlyTheTaskTitle_doesNotClearDescription() {
+            User user = createUser("test-user-updating-tasks");
+            Task task = createTask(user, "original-title");
+            updateTask(user, task.id, String.format(
+                    """
+                    {
+                        "description": "%s"
+                    }
+                    """, "a-description"));
+
+            Task updatedTask = updateTask(user, task.id, String.format(
+                    """
+                    {
+                        "title": "%s"
+                    }
+                    """, "updated-title"));
+
+            assertThat(updatedTask.getTitle(), is("updated-title"));
+            assertThat(updatedTask.getDescription(), is("a-description"));
+        }
+
+        @Test
+        void whenUpdatingOnlyTaskDescription_updatesSuccessfully() {
+            User user = createUser("test-user-updating-desc");
+            Task task = createTask(user, "original-title");
+
+            Task updatedTask = updateTask(user, task.id, String.format(
+                    """
+                    {
+                        "description": "%s"
+                    }
+                    """, "updated-description"));
+
+            assertThat(updatedTask.getDescription(), is("updated-description"));
+            // assert the title doesn't change
+            assertThat(updatedTask.getTitle(), is(task.getTitle()));
+        }
+
+        @Test
+        void whenSettingDescriptionToBlankString_updatesSuccessfully() {
+            User user = createUser("test-user-updating-desc");
+            Task task = createTask(user, "original-title");
+
+            updateTask(user, task.id, String.format(
+                    """
+                    {
+                        "description": "%s"
+                    }
+                    """, "updated-description"));
+            Task updatedTask = updateTask(user, task.id, String.format(
+                    """
+                    {
+                        "description": "%s"
+                    }
+                    """, ""));
+
+            assertThat(updatedTask.getDescription(), is(blankString()));
+            // assert the title doesn't change
+            assertThat(updatedTask.getTitle(), is(task.getTitle()));
+        }
+
+        @Test
+        void whenTaskDoesntExist_return404() {
+            User user = createUser("test-user-updating-tasks");
+
+            given()
+                    .when()
+                    .body(String.format(
+                            """
+                            {
+                                "title": "%s"
+                            }
+                            """,
+                            "updated-title"))
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .contentType(ContentType.JSON)
+                    .post("/tasks/" + Long.toString(123))
+                    .then()
+                    .statusCode(404);
+        }
+
     }
 
     @Nested
@@ -280,6 +340,20 @@ public class TasksEndpointTest {
                 .body()
                 .jsonPath()
                 .getList(".", Task.class);
+    }
+
+    Task updateTask(User user, Long taskId, String body) {
+        return given()
+                .when()
+                .body(body)
+                .header(new Header("X-User-Id", user.getId().toString()))
+                .contentType(ContentType.JSON)
+                .post("/tasks/" + taskId)
+                .then()
+                .statusCode(200)
+                .extract()
+                .response()
+                .getBody().as(Task.class);
     }
 
 }
