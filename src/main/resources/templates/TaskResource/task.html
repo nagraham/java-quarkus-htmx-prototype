@@ -10,23 +10,32 @@
     <input type="hidden" name="item" value="{task.id}">
 
     {! Task Title !}
-    <div class="task-title flex-row flex-align-center">
+    <div class="task-title flex-row flex-align-center"
+         title="Ctrl+click to open the Task Details"
+         {! it would be cool if alpine had @click.ctrl; until then, this work around isn't too bad !}
+         @click="if ($event.ctrlKey) { isViewingDetails = ! isViewingDetails }">
 
         {! Display the title !}
         <span x-on:dblclick="isEditing = ! isEditing"
               x-show="!isEditing"
+              {! delay 50ms on enter to give form enough time to fade out !}
+              x-transition:enter.delay.50ms
               title="Double-click to edit the task's title">
             {task.getTitle()}
         </span>
 
         {! Edit Task Title Form !}
-        <div class="edit-task-title-form" x-show="isEditing">
+        <div class="edit-task-title-form"
+             x-show="isEditing"
+             {! delay 50ms on enter to give title enough time to fade out !}
+             x-transition:enter.delay.50ms
+             x-cloak>
+
             <form id="task-{task.id}-edit-title"
                   class="flex-row flex-align-center"
                   hx-post="/tasks/{task.id}"
                   hx-target="#task-{task.id}"
-                  hx-swap="outerHTML"
-            >
+                  hx-swap="outerHTML">
                 <input @keyup.escape="isEditing = false"
                        class="edit"
                        name="title"
@@ -57,6 +66,7 @@
                     class="icon-btn"
                     title="Click to close the Task Details"
                     x-show="isViewingDetails"
+                    x-cloak
                     x-on:click="isViewingDetails = ! isViewingDetails">
                 <i data-feather="minus-square"></i>
             </button>
@@ -64,14 +74,14 @@
     </div>
 
     {! Task Details Pane !}
-    <div class="task-details" x-show="isViewingDetails">
+    <div class="task-details" x-cloak x-show="isViewingDetails" x-transition>
 
         {! Task Description !}
         <div class="task-description">
             <h2 class="fnt-6 mg-clear mg-btm-2">Description</h2>
 
             {! Display the description !}
-            <div class="light-gray-border pad-3" x-on:dblclick="isEditingDesc = ! isEditingDesc" x-show="!isEditingDesc">
+            <div class="light-gray-border pad-3" x-on:dblclick="isEditingDesc = ! isEditingDesc" x-show="!isEditingDesc" x-transition:enter.delay.50ms>
                 {#if task.getDescription() == null || task.getDescription().isEmpty()}
                     <span>...</span>
                 {#else}
@@ -87,6 +97,7 @@
                   {! Setting this header will mean the new HTML partial will have the Detail View open !}
                   hx-headers='\{ "X-Override-IsViewingDetails": true }'
                   x-show="isEditingDesc"
+                  x-transition:enter.delay.50ms
             >
                 <textarea class="ht-10 preserve-whitespace"
                           @keyup.escape="isEditingDesc = false"
