@@ -28,10 +28,32 @@ h1 {
     font-weight: bolder;
 }
 
-input {
+/* Style for the Task Title inputs */
+input.task-title {
     font-size: 1rem;
     padding: 0.5rem;
     width: 20rem;
+}
+
+/* Style for the Task Completion Button */
+.completion-button {
+    height: 1.25rem;
+    width: 1.25rem;
+    border: solid dimgray 1px;
+    border-radius: 1rem;            /* make it a circle */
+    position: relative;             /* so the toggle can float over this element */
+}
+
+/* Style for the completion button (needs to be in nested component relative to .completion-button) */
+.completed-toggle {
+    position: absolute;                 /* because the parent is relative, positions are relative to the parent */
+    top: 2px;
+    left: 2px;
+    height: 0.90rem;                    /* Make it slightly smaller than parent */
+    width: 0.90rem;
+    background: cornflowerblue;
+    border: solid cornflowerblue 1px;
+    border-radius: 1rem;                /* again, make it a circle */
 }
 
 .task-card {
@@ -101,6 +123,10 @@ input {
     margin-bottom: 0.25rem;
 }
 
+.mg-rt-3 {
+    margin-right: 0.5rem;
+}
+
 .mg-left-auto {
     margin-left: auto;
 }
@@ -115,6 +141,10 @@ input {
 
 .fnt-6 {
     font-size: 1.25rem;
+}
+
+.strike-thru {
+    text-decoration: line-through;
 }
 
 /*

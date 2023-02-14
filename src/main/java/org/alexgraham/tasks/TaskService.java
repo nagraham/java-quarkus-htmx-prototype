@@ -18,9 +18,18 @@ import java.util.stream.Stream;
 @ApplicationScoped
 public class TaskService {
 
+    @ReactiveTransactional
+    public Uni<Task> completeTask(Long taskId) {
+        return Task.<Task>findById(taskId)
+                .onItem().ifNull().failWith(new TaskNotFoundException())
+                .flatMap(task -> task.complete().persist());
+    }
+
     /**
      * Get all Tasks associated with the given owner, sorted by the ranking the customer
      * has applied.
+     * <p>
+     * By default, completed Tasks are not included in the results.
      * <p>
      * The TaskRanking may not encompass the full set of tasks the User has created. Any
      * tasks not in the TaskRanking will be appended to the end.
@@ -32,7 +41,12 @@ public class TaskService {
     public Uni<List<Task>> queryByOwner(String ownerId) {
         // Get the tasks for the owner (the base sort is by id for now)
         // TODO: sort by creation date
-        Uni<List<Task>> taskUni = Task.<Task>find("ownerid = ?1", Sort.by("id"), ownerId).list();
+        Uni<List<Task>> taskUni = Task.<Task>find(
+                "ownerid = ?1 AND state != ?2",
+                Sort.by("id"),
+                ownerId,
+                Task.State.Complete
+        ).list();
 
         // Get the TaskRanking
         Uni<TaskRanking> taskRankingUni = TaskRanking.<TaskRanking>find("ownerid = ?1", ownerId)

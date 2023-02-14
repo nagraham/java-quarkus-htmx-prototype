@@ -4,7 +4,7 @@
 
 <div class="task task-card"
      id="task-{task.id}"
-     x-data="{ isEditing: false, isViewingDetails: {isViewingDetails ?: false}, isEditingDesc: false }">
+     x-data="{ isEditing: false, isViewingDetails: {isViewingDetails ?: false}, isEditingDesc: false, isComplete: {task.isComplete()} }">
 
     {! This hidden input is used in the re-rank Task request !}
     <input type="hidden" name="item" value="{task.id}">
@@ -15,8 +15,18 @@
          {! it would be cool if alpine had @click.ctrl; until then, this work around isn't too bad !}
          @click="if ($event.ctrlKey) { isViewingDetails = ! isViewingDetails }">
 
+        {! Task completion toggle !}
+        <div class="completion-button mg-rt-3"
+             x-on:click="isComplete = ! isComplete"
+             hx-post="/tasks/{task.id}/complete"
+             hx-target="#task-{task.id}"
+             hx-swap="outerHTML">
+            <div class="completed-toggle" x-cloak x-show="isComplete" x-transition></div>
+        </div>
+
         {! Display the title !}
-        <span x-on:dblclick="isEditing = ! isEditing"
+        <span :class="isComplete ? 'strike-thru' : ''"
+              x-on:dblclick="isEditing = ! isEditing"
               x-show="!isEditing"
               {! delay 50ms on enter to give form enough time to fade out !}
               x-transition:enter.delay.50ms
@@ -37,7 +47,7 @@
                   hx-target="#task-{task.id}"
                   hx-swap="outerHTML">
                 <input @keyup.escape="isEditing = false"
-                       class="edit"
+                       class="task-title"
                        name="title"
                        value="{task.getTitle()}"
                        title="Press ENTER to save; press ESC to cancel">

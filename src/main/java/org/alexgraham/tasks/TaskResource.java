@@ -38,6 +38,44 @@ public class TaskResource {
         public static native TemplateInstance task(Task task);
     }
 
+    /**
+     * JSON API for completing a Task.
+     *
+     * @param taskId    The Task to complete.
+     * @param userId    The user ID (currently, this is a silly proxy until I have auth/sessions).
+     * @return          The completed Task.
+     */
+    @POST
+    @Path("/{id}/complete")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Task> complete(
+            @PathParam("id") Long taskId,
+            @RestHeader("X-User-Id") String userId
+    ) {
+        return service.completeTask(taskId);
+    }
+
+    /**
+     * The HTML endpoint for completing a Task
+     * @param taskId        The Task to complete.
+     * @param userId        The user ID (currently, this is a silly proxy until I have auth/sessions).
+     * @param isHxRequest   Whether the incoming request is via HTMX (else, it will return a standard 302 resp).
+     * @return
+     */
+    @POST
+    @Path("/{id}/complete")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    public Uni<Response> rerank(
+            @PathParam("id") Long taskId,
+            @RestCookie UUID userId,
+            @RestHeader("HX-Request") boolean isHxRequest
+    ) {
+        return service.completeTask(taskId).map(task -> postResponse(isHxRequest, "/tasks",
+                Response.ok(Template.task(task))));
+    }
+
     @ServerExceptionMapper
     public Uni<Response> mapException(TaskNotFoundException e) {
         return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());

@@ -17,6 +17,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.blankString;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -77,38 +78,58 @@ public class TasksEndpointTest {
                 );
     }
 
-    @Test
-    void listTasksReturnsAllTasksOwnedByUser() {
-        User user = createUser("test-list-user");
+    @Nested
+    @DisplayName("List Tasks")
+    class ListTasks {
 
-        createTask(user, "task-1");
-        createTask(user, "task-2");
-        createTask(user, "task-3");
+        @Test
+        void byDefault_returnsAllActiveTasksOwnedByUser() {
+            User user = createUser("test-list-user");
 
-        Response response = given()
-                .when()
-                .contentType(ContentType.JSON)
-                .header(new Header("X-User-Id", user.getId().toString()))
-                .get("/tasks")
-                .then()
-                .statusCode(200)
-                .extract().response();
-        assertThat(response.jsonPath().getList("title"), contains("task-1", "task-2", "task-3"));
-    }
+            createTask(user, "task-1");
+            createTask(user, "task-2");
+            createTask(user, "task-3");
 
-    @Test
-    void listTasks_returnsEmptyIfUserDoesNotHaveAny() {
-        User user = createUser("test-user-without-tasks");
+            Response response = given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .get("/tasks")
+                    .then()
+                    .statusCode(200)
+                    .extract().response();
+            assertThat(response.jsonPath().getList("title"), contains("task-1", "task-2", "task-3"));
+        }
 
-        Response response = given()
-                .when()
-                .contentType(ContentType.JSON)
-                .header(new Header("X-User-Id", user.getId().toString()))
-                .get("/tasks")
-                .then()
-                .statusCode(200)
-                .extract().response();
-        assertThat(response.jsonPath().getList("title"), is(empty()));
+        @Test
+        void byDefault_doesNotReturnCompletedTasks() {
+            User user = createUser("test-list-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            Task task3 = createTask(user, "task-3");
+            Task task4 = createTask(user, "task-4");
+
+            completeTask(user, task2.id);
+            completeTask(user, task4.id);
+            List<Task> tasks = listTasksByUser(user);
+
+            assertThat(tasks.stream().map(Task::getTitle).collect(Collectors.toList()), contains("task-1", "task-3"));
+        }
+
+        @Test
+        void returnsEmptyIfUserDoesNotHaveAny() {
+            User user = createUser("test-user-without-tasks");
+
+            Response response = given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .get("/tasks")
+                    .then()
+                    .statusCode(200)
+                    .extract().response();
+            assertThat(response.jsonPath().getList("title"), is(empty()));
+        }
     }
 
     @Nested
@@ -286,6 +307,75 @@ public class TasksEndpointTest {
         }
     }
 
+    @Nested
+    @DisplayName("Completing Tasks")
+    class CompletingTasks {
+
+        @Test
+        void whenTaskExists_isStillOpen_isReturnedAsComplete() {
+            User user = createUser("test-completion-user");
+            Task task = createTask(user, "task-to-complete");
+
+            Task completedTask = given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + task.id + "/complete")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .response()
+                    .getBody()
+                    .as(Task.class);
+
+            assertThat(task.id, is(completedTask.id));
+            assertThat(completedTask.getState(), is(Task.State.Complete));
+        }
+
+        @Test
+        void whenTaskExists_alreadyComplete_isReturnedAsComplete() {
+            User user = createUser("test-completion-user");
+            Task task = createTask(user, "task-to-complete");
+
+            // Complete once
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + task.id + "/complete")
+                    .then()
+                    .statusCode(200);
+
+            // Complete it again
+            Task completedTask = given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + task.id + "/complete")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .response()
+                    .getBody()
+                    .as(Task.class);
+
+            assertThat(completedTask.getState(), is(Task.State.Complete));
+        }
+
+        @Test
+        void whenTaskDoesntExist_return404() {
+            User user = createUser("test-completion-user");
+
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + 123 + "/complete")
+                    .then()
+                    .statusCode(404);
+        }
+    }
+
     /* ********************************************************
      *   HELPER METHODS
      * ******************************************************** */
@@ -306,6 +396,20 @@ public class TasksEndpointTest {
                 .extract().response();
 
         return response.getBody().as(User.class);
+    }
+
+    Task completeTask(User user, Long taskId) {
+        return given()
+                .when()
+                .contentType(ContentType.JSON)
+                .header(new Header("X-User-Id", user.getId().toString()))
+                .post("/tasks/" + taskId + "/complete")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response()
+                .getBody()
+                .as(Task.class);
     }
 
     Task createTask(User user, String title) {
