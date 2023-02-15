@@ -35,7 +35,24 @@ public class Task extends PanacheEntity {
         /**
          * The Task has been marked as completed.
          */
-        Complete
+        Complete;
+
+        /**
+         * Parses a State from the given string.
+         * @param s     The string to parse. To add a little ease of use (API-friendliness),
+         *              the string evaluation is case-insensitive. So "OpEn" will parse
+         *              successfully to an Open enum value.
+         * @throws      IllegalArgumentException if the given string does not parse to a State.
+         * @return      The State matching the given string.
+         */
+        public static State parse(String s) {
+            // BONUS: new Java switch-statement style!
+            return switch(s.toLowerCase()) {
+                case "open" -> Open;
+                case "complete" -> Complete;
+                default -> throw new IllegalArgumentException(s + " is not a valid state");
+            };
+        }
     }
 
     @Column(length = 128)
@@ -104,7 +121,12 @@ public class Task extends PanacheEntity {
 
     @JsonIgnore
     public boolean isComplete() {
-        return this.state.equals(State.Complete);
+        return State.Complete.equals(state);
+    }
+
+    @JsonIgnore
+    public boolean isOpen() {
+        return State.Open.equals(state);
     }
 
     /**

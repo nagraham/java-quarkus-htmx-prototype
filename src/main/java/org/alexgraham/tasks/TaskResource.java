@@ -17,6 +17,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -36,6 +37,16 @@ public class TaskResource {
     public static class Template {
         public static native TemplateInstance list(List<Task> tasks);
         public static native TemplateInstance task(Task task);
+    }
+
+    @ServerExceptionMapper
+    public Uni<Response> mapException(TaskNotFoundException e) {
+        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    @ServerExceptionMapper
+    public Uni<Response> mapException(IllegalArgumentException e) {
+        return Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).build());
     }
 
     /**
@@ -58,6 +69,7 @@ public class TaskResource {
 
     /**
      * The HTML endpoint for completing a Task
+     *
      * @param taskId        The Task to complete.
      * @param userId        The user ID (currently, this is a silly proxy until I have auth/sessions).
      * @param isHxRequest   Whether the incoming request is via HTMX (else, it will return a standard 302 resp).
@@ -67,7 +79,7 @@ public class TaskResource {
     @Path("/{id}/complete")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
-    public Uni<Response> rerank(
+    public Uni<Response> complete(
             @PathParam("id") Long taskId,
             @RestCookie UUID userId,
             @RestHeader("HX-Request") boolean isHxRequest
@@ -76,17 +88,27 @@ public class TaskResource {
                 Response.ok(Template.task(task))));
     }
 
-    @ServerExceptionMapper
-    public Uni<Response> mapException(TaskNotFoundException e) {
-        return Uni.createFrom().item(Response.status(Response.Status.NOT_FOUND).build());
-    }
+    // DEV NOTE: It seems we should not use @Consumes on GET APIs. I had @Consumes with the associated media type,
+    // but this led to a strange bug where the browser would call the JSON API if the HTTP endpoint took in @QueryParams.
 
-    // The "foo" rest header is just to make this API not clash with the html list
+    /**
+     * The JSON API for returning a List of Tasks belonging to the given User.
+     * <p>
+     * By default, only Tasks with an "Open" {@link Task.State} will be returned. To find Tasks in
+     * other states, it is possible to filter using the state query parameters.
+     *
+     * @param userId    The User to find tasks for.
+     * @param state     An optional list of {@link Task.State}s as a filter to the results.
+     * @return          A list of Tasks belonging to the User.
+     */
     @GET
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<List<Task>> list(@RestHeader("X-User-Id") String userId, @RestHeader("X-Foo") String foo) {
-        return service.queryByOwner(userId);
+    @Produces(MediaType.APPLICATION_JSON)   // don't use Consume here; otherwise, the "Accept */*" will favor JSON
+    public Uni<List<Task>> list(
+            @RestHeader("X-User-Id") String userId,
+            @QueryParam("state") final List<String> state
+    ) {
+        List<Task.State> states = state.stream().map(Task.State::parse).toList();
+        return service.queryByOwner(userId, states);
     }
 
     // DEV NOTE: If you don't see any items listed, make sure you have the
@@ -94,11 +116,18 @@ public class TaskResource {
     @GET
     @Consumes(MediaType.TEXT_HTML)
     @Produces(MediaType.TEXT_HTML)
-    public Uni<TemplateInstance> list(@RestCookie String userId) {
-        LOG.debug("Listing Tasks for User=" + userId);
-        return service.queryByOwner(userId)
+    public Uni<TemplateInstance> list(
+            @RestCookie String userId,
+            @QueryParam("state") final List<String> state,
+            @RestHeader("X-Override-ShowCompleted") Boolean showCompleted,
+            @RestHeader("HX-Request") Boolean isHxRequest
+    ) {
+        List<Task.State> taskStates = state.stream().map(Task.State::parse).toList();
+        return service.queryByOwner(userId, taskStates)
                 .onItem()
-                .transform(Template::list);
+                .transform(tasks -> {
+                    return Template.list(tasks).data("showCompleted", showCompleted != null && showCompleted);
+                });
     }
 
     @GET

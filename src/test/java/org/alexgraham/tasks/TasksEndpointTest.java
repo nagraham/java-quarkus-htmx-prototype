@@ -18,8 +18,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.blankString;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
@@ -114,6 +116,59 @@ public class TasksEndpointTest {
             List<Task> tasks = listTasksByUser(user);
 
             assertThat(tasks.stream().map(Task::getTitle).collect(Collectors.toList()), contains("task-1", "task-3"));
+        }
+
+        @Test
+        void filterByState_onlyComplete_onlyReturnsCompletedTasks() {
+            User user = createUser("test-list-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            Task task3 = createTask(user, "task-3");
+            Task task4 = createTask(user, "task-4");
+
+            completeTask(user, task2.id);
+            completeTask(user, task4.id);
+            List<Task> tasks = listTasksByUser(user, List.of("state=complete"));
+
+            assertThat(tasks, hasSize(2));
+            assertThat(tasks.stream().map(Task::getTitle).collect(Collectors.toList()), contains("task-2", "task-4"));
+        }
+
+        @Test
+        void filterByMultipleState_OpenAndComplete_returnAllTasks_WithOpenFirst_followedByComplete() {
+            User user = createUser("test-list-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            Task task3 = createTask(user, "task-3");
+            Task task4 = createTask(user, "task-4");
+
+            completeTask(user, task2.id);
+            completeTask(user, task3.id);
+            List<Task> tasks = listTasksByUser(user, List.of("state=open", "state=complete"));
+
+            assertThat(tasks, hasSize(4));
+            assertThat(tasks.stream().map(Task::getTitle).collect(Collectors.toList()),
+                    containsInRelativeOrder(task1.getTitle(), task4.getTitle(), task2.getTitle(), task3.getTitle()));
+        }
+
+        // TODO: test status query with an invalid status
+        @Test
+        void filterWithNonExistantState_return400() {
+            User user = createUser("test-list-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            Task task3 = createTask(user, "task-3");
+            Task task4 = createTask(user, "task-4");
+
+            completeTask(user, task2.id);
+            completeTask(user, task4.id);
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .get("/tasks?state=foobar")
+                    .then()
+                    .statusCode(400);
         }
 
         @Test
@@ -433,11 +488,21 @@ public class TasksEndpointTest {
     }
 
     List<Task> listTasksByUser(User user) {
+        return listTasksByUser(user, List.of());
+    }
+
+    List<Task> listTasksByUser(User user, List<String> queryParams) {
+
+        String queryPath = "";
+        if (queryParams != null && !queryParams.isEmpty()) {
+            queryPath = "?" + String.join("&", queryParams);
+        }
+
         return given()
                 .when()
                 .contentType(ContentType.JSON)
                 .header(new Header("X-User-Id", user.getId().toString()))
-                .get("/tasks")
+                .get( "/tasks" + queryPath)
                 .then()
                 .statusCode(200)
                 .extract()

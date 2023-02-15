@@ -4,7 +4,9 @@
 
 <div class="task task-card"
      id="task-{task.id}"
-     x-data="{ isEditing: false, isViewingDetails: {isViewingDetails ?: false}, isEditingDesc: false, isComplete: {task.isComplete()} }">
+     x-data="{ isEditing: false, isViewingDetails: {isViewingDetails ?: false}, isEditingDesc: false, isComplete: {task.isComplete()} }"
+     x-bind:class="isComplete ? 'not-sortable' : ''"
+    >
 
     {! This hidden input is used in the re-rank Task request !}
     <input type="hidden" name="item" value="{task.id}">
@@ -17,6 +19,7 @@
 
         {! Task completion toggle !}
         <div class="completion-button mg-rt-3"
+             title="Click to complete this Task"
              x-on:click="isComplete = ! isComplete"
              hx-post="/tasks/{task.id}/complete"
              hx-target="#task-{task.id}"

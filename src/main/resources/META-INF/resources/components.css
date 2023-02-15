@@ -1,0 +1,92 @@
+/*
+ * COMPONENTS
+ *
+ * This file defines the CSS for different components.
+ */
+
+/*
+ * COMPLETION BUTTON
+ */
+
+/* Style for the Task Completion Button */
+.completion-button {
+    height: 1.25rem;
+    width: 1.25rem;
+    border: solid dimgray 1px;
+    border-radius: 1rem;            /* make it a circle */
+    position: relative;             /* so the toggle can float over this element */
+}
+
+/* Style for the completion button (needs to be in nested component relative to .completion-button) */
+.completed-toggle {
+    position: absolute;                 /* because the parent is relative, positions are relative to the parent */
+    top: 2px;
+    left: 2px;
+    height: 0.90rem;                    /* Make it slightly smaller than parent */
+    width: 0.90rem;
+    background: #2196F3;
+    border: solid #2196F3 1px;
+    border-radius: 1rem;                /* again, make it a circle */
+}
+
+
+
+/*
+ * SLIDING TOGGLE
+ */
+
+/* The switch - the box around the slider */
+.sliding-toggle {
+    position: relative;
+    display: inline-block;
+    width: 3.25rem;
+    height: 2rem;
+}
+
+/* Hide default HTML checkbox in the slider */
+.sliding-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.sliding-toggle .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.sliding-toggle .slider:before {
+    position: absolute;
+    content: "";
+    height: 1.5rem;
+    width: 1.5rem;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.sliding-toggle input:checked + .slider {
+    background-color: #2196F3;
+}
+
+.sliding-toggle input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+.sliding-toggle input:checked + .slider:before {
+    -webkit-transform: translateX(1.25rem);
+    -ms-transform: translateX(1.25rem);
+    transform: translateX(1.25rem);
+}

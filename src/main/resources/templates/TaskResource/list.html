@@ -1,12 +1,33 @@
+{@java.lang.Boolean showCompleted}
+
 {#include base}
     {#body}
         <div class="container" id="task-app">
 
             <h1>My Tasks</h1>
 
-            <form action="/tasks" method="POST" hx-target="#task-list" hx-swap="beforeend">
-                <input class="task-title new-task" name="title" placeholder="What do you need to do?" />
-            </form>
+            <div class="flex-row flex-align-center">
+                <form action="/tasks" method="POST" hx-target="#task-list" hx-swap="beforeend">
+                    <input class="task-title new-task" name="title" placeholder="What do you need to do?" />
+                </form>
+                <span class="mg-left-auto mg-rt-3 color-primary fnt-wt-6">Show Completed?</span>
+
+                 {! sliding toggle implementation based on https://www.w3schools.com/howto/howto_css_switch.asp !}
+                <label class="sliding-toggle">
+                    <input type="checkbox"
+                           {#if showCompleted}
+                               checked
+                               hx-get="/tasks"
+                               hx-headers='\{ "X-Override-ShowCompleted": false }'
+                           {#else}
+                               hx-get="/tasks?state=complete&state=open"
+                               hx-headers='\{ "X-Override-ShowCompleted": true }'
+                           {/if}
+                           hx-target="#task-app"
+                           hx-swap="outerHTML">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
             {!
               Example for Sortable: https://htmx.org/examples/sortable/
@@ -21,6 +42,5 @@
                     {/for}
                 </div>
             </div>
-        </div>
     {/body}
 {/include}

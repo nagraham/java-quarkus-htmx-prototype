@@ -7,16 +7,33 @@ import org.alexgraham.users.User;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ApplicationScoped
 public class TaskService {
+
+    private static final List<Task.State> DEFAULT_STATES = List.of(Task.State.Open);
+
+    /**
+     * Sorts Tasks by Task.State
+     */
+    private static final Comparator<Task> BY_STATE = (a, b) -> {
+        if (a.isOpen() && b.isOpen()) {
+            return 0;
+        } else if (a.isOpen()) {
+            return -1;
+        } else {
+            return 1;
+        }
+    };
 
     @ReactiveTransactional
     public Uni<Task> completeTask(Long taskId) {
@@ -26,29 +43,42 @@ public class TaskService {
     }
 
     /**
-     * Get all Tasks associated with the given owner, sorted by the ranking the customer
-     * has applied.
+     * Get all Tasks associated with the given owner.
      * <p>
-     * By default, completed Tasks are not included in the results.
+     * By default, only Open Tasks are included in the results. Other states can be viewed
+     * with the
      * <p>
+     * The Tasks have the following sorting rules:
+     * <ol>
+     *     <li>Open tasks that have been ranked by the user are ordered by that ranking</li>
+     *     <li>Any Tasks not ranked by the user (e.g. new Tasks) come next</li>
+     *     <li>(If querying completed tasks) Any completed tasks</li>
+     * </ol>
+     *
      * The TaskRanking may not encompass the full set of tasks the User has created. Any
      * tasks not in the TaskRanking will be appended to the end.
      *
      * @param ownerId   The id of the {@link User} who owns the tasks
+     * @param states    An optional list of {@link Task.State} to filter results. If null
+     *                  or empty, it will default to returning Open tasks.
      * @return          The ranked set of the Tasks.
      */
     @ReactiveTransactional
-    public Uni<List<Task>> queryByOwner(String ownerId) {
-        // Get the tasks for the owner (the base sort is by id for now)
-        // TODO: sort by creation date
+    public Uni<List<Task>> queryByOwner(String ownerId, List<Task.State> states) {
+
+        // set the default status to Task
+        if (states == null || states.isEmpty()) {
+            states = DEFAULT_STATES;
+        }
+
         Uni<List<Task>> taskUni = Task.<Task>find(
-                "ownerid = ?1 AND state != ?2",
+                "ownerid = ?1 AND state in (?2)",
                 Sort.by("id"),
                 ownerId,
-                Task.State.Complete
+                states
         ).list();
 
-        // Get the TaskRanking
+        // Get the TaskRanking to help with sorting the Open Tasks
         Uni<TaskRanking> taskRankingUni = TaskRanking.<TaskRanking>find("ownerid = ?1", ownerId)
                 .firstResult()
                 .replaceIfNullWith(() -> new TaskRanking().setRankedTaskIds(new ArrayList<>()));
@@ -56,13 +86,11 @@ public class TaskService {
         // Join the two async results, and set the Tasks by order.
         return Uni.combine().all().unis(taskUni, taskRankingUni)
                 .combinedWith((tasks, taskRanking) -> {
-                    Map<Long, Task> tasksById = new HashMap<>();
+                    Map<Long, Task> tasksById = tasks.stream().collect(Collectors.toMap(task -> task.id, task -> task));
+                    Stream<Task> rankedTasks = taskRanking.getRankedTaskIds().stream().map(tasksById::get).filter(Objects::nonNull);
                     Set<Long> rankedTaskSet = new HashSet<>(taskRanking.getRankedTaskIds());
-                    tasks.forEach(task -> tasksById.put(task.id, task));
-                    return Stream.concat(
-                            taskRanking.getRankedTaskIds().stream().map(tasksById::get),
-                            tasks.stream().filter(task -> !rankedTaskSet.contains(task.id))
-                    ).toList();
+                    Stream<Task> unRankedTasks = tasks.stream().filter(task -> !rankedTaskSet.contains(task.id));
+                    return Stream.concat(rankedTasks, unRankedTasks).sorted(BY_STATE).toList();
                 })
                 .flatMap(tasks -> Uni.createFrom().item(tasks));
     }
