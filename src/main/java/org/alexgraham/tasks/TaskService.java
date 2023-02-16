@@ -22,19 +22,6 @@ public class TaskService {
 
     private static final List<Task.State> DEFAULT_STATES = List.of(Task.State.Open);
 
-    /**
-     * Sorts Tasks by Task.State
-     */
-    private static final Comparator<Task> BY_STATE = (a, b) -> {
-        if (a.isOpen() && b.isOpen()) {
-            return 0;
-        } else if (a.isOpen()) {
-            return -1;
-        } else {
-            return 1;
-        }
-    };
-
     @ReactiveTransactional
     public Uni<Task> completeTask(Long taskId) {
         return Task.<Task>findById(taskId)
@@ -52,7 +39,6 @@ public class TaskService {
      * <ol>
      *     <li>Open tasks that have been ranked by the user are ordered by that ranking</li>
      *     <li>Any Tasks not ranked by the user (e.g. new Tasks) come next</li>
-     *     <li>(If querying completed tasks) Any completed tasks</li>
      * </ol>
      *
      * The TaskRanking may not encompass the full set of tasks the User has created. Any
@@ -83,14 +69,14 @@ public class TaskService {
                 .firstResult()
                 .replaceIfNullWith(() -> new TaskRanking().setRankedTaskIds(new ArrayList<>()));
 
-        // Join the two async results, and set the Tasks by order.
+        // Join the two async results
         return Uni.combine().all().unis(taskUni, taskRankingUni)
                 .combinedWith((tasks, taskRanking) -> {
                     Map<Long, Task> tasksById = tasks.stream().collect(Collectors.toMap(task -> task.id, task -> task));
                     Stream<Task> rankedTasks = taskRanking.getRankedTaskIds().stream().map(tasksById::get).filter(Objects::nonNull);
                     Set<Long> rankedTaskSet = new HashSet<>(taskRanking.getRankedTaskIds());
                     Stream<Task> unRankedTasks = tasks.stream().filter(task -> !rankedTaskSet.contains(task.id));
-                    return Stream.concat(rankedTasks, unRankedTasks).sorted(BY_STATE).toList();
+                    return Stream.concat(rankedTasks, unRankedTasks).toList();
                 })
                 .flatMap(tasks -> Uni.createFrom().item(tasks));
     }

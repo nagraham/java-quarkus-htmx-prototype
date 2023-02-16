@@ -1,0 +1,38 @@
+{#include base}
+    {#body}
+        {! This is the main body for the Tasks pane !}
+        <div class="container" id="task-app" x-data="{ showCompleted: false }">
+            <h1>My Tasks</h1>
+
+            {! Control pannel for Tasks !}
+            <div class="flex-row flex-align-center">
+
+                {! Create Tasks !}
+                <form hx-post="/tasks" method="POST" hx-target="#task-list" hx-swap="beforeend">
+                    <input class="task-title new-task" name="title" placeholder="What do you need to do?" />
+                </form>
+
+                {! View Completd Tasks !}
+                <span class="mg-left-auto mg-rt-3 color-primary fnt-wt-6">Show Completed?</span>
+                {! sliding toggle implementation based on https://www.w3schools.com/howto/howto_css_switch.asp !}
+                <label class="sliding-toggle">
+                    <input type="checkbox"
+                        x-on:click="showCompleted = ! showCompleted"
+                        hx-trigger="click[target.checked]"
+                        hx-target="#completed-tasks"
+                        hx-get="/tasks?state=complete"
+                        hx-swap="innerHTML">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            {! Display open tasks !}
+            {#include TaskResource/list.html tasks=tasks /}
+
+            {! Display completed tasks !}
+            <template x-if="showCompleted">
+                <div id="completed-tasks"></div>
+            </template>
+        </div>
+    {/body}
+{/include}

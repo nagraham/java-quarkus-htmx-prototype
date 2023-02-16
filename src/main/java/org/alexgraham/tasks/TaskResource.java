@@ -84,8 +84,7 @@ public class TaskResource {
             @RestCookie UUID userId,
             @RestHeader("HX-Request") boolean isHxRequest
     ) {
-        return service.completeTask(taskId).map(task -> postResponse(isHxRequest, "/tasks",
-                Response.ok(Template.task(task))));
+        return service.completeTask(taskId).map(ignored -> Response.ok().build());
     }
 
     // DEV NOTE: It seems we should not use @Consumes on GET APIs. I had @Consumes with the associated media type,
@@ -119,15 +118,10 @@ public class TaskResource {
     public Uni<TemplateInstance> list(
             @RestCookie String userId,
             @QueryParam("state") final List<String> state,
-            @RestHeader("X-Override-ShowCompleted") Boolean showCompleted,
             @RestHeader("HX-Request") Boolean isHxRequest
     ) {
         List<Task.State> taskStates = state.stream().map(Task.State::parse).toList();
-        return service.queryByOwner(userId, taskStates)
-                .onItem()
-                .transform(tasks -> {
-                    return Template.list(tasks).data("showCompleted", showCompleted != null && showCompleted);
-                });
+        return service.queryByOwner(userId, taskStates).onItem().transform(Template::list);
     }
 
     @GET
@@ -254,7 +248,7 @@ public class TaskResource {
      */
     private Response postResponse(boolean isHxRequest, String path, Response.ResponseBuilder responseBuilder) {
         if (isHxRequest) {
-            return responseBuilder.header("HX-Push", path).build();
+            return responseBuilder.build();
         } else {
             // backup for progressive enhancement
             return Response.status(Response.Status.FOUND).header("Location", path).build();

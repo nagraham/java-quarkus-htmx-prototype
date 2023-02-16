@@ -8,6 +8,11 @@
         document.querySelectorAll(".new-task").forEach((elm) => (elm.value = ""));
     });
 
+    window.isChecked = (event) => {
+        console.log(event);
+        return event.checked === true;
+    }
+
     htmx.onLoad(function(content) {
         // This is required to render the Feather icons
         feather.replace();

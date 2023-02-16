@@ -135,7 +135,7 @@ public class TasksEndpointTest {
         }
 
         @Test
-        void filterByMultipleState_OpenAndComplete_returnAllTasks_WithOpenFirst_followedByComplete() {
+        void filterByMultipleState_OpenAndComplete_returnAllTasks() {
             User user = createUser("test-list-user");
             Task task1 = createTask(user, "task-1");
             Task task2 = createTask(user, "task-2");
@@ -148,10 +148,9 @@ public class TasksEndpointTest {
 
             assertThat(tasks, hasSize(4));
             assertThat(tasks.stream().map(Task::getTitle).collect(Collectors.toList()),
-                    containsInRelativeOrder(task1.getTitle(), task4.getTitle(), task2.getTitle(), task3.getTitle()));
+                    contains(task1.getTitle(), task2.getTitle(), task3.getTitle(), task4.getTitle()));
         }
 
-        // TODO: test status query with an invalid status
         @Test
         void filterWithNonExistantState_return400() {
             User user = createUser("test-list-user");
@@ -318,7 +317,7 @@ public class TasksEndpointTest {
             List<Task> reRankedTasks = listTasksByUser(user);
             assertThat(
                     reRankedTasks.stream().map(Task::getTitle).collect(Collectors.toList()),
-                    contains("task-3", "task-1", "task-2", "task-4"));
+                    containsInRelativeOrder("task-3", "task-1", "task-2", "task-4"));
         }
 
         @Test
@@ -358,7 +357,7 @@ public class TasksEndpointTest {
             List<Task> reRankedTasks = listTasksByUser(user);
             assertThat(
                     reRankedTasks.stream().map(Task::getTitle).collect(Collectors.toList()),
-                    contains("task-4", "task-1", "task-2", "task-3"));
+                    containsInRelativeOrder("task-4", "task-1", "task-2", "task-3"));
         }
     }
 
