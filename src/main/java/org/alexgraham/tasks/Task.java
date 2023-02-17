@@ -9,6 +9,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -58,7 +59,7 @@ public class Task extends PanacheEntity {
     @Column(length = 128)
     private String title;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="ownerid", nullable=false)
     private User owner;
 
@@ -105,10 +106,6 @@ public class Task extends PanacheEntity {
             this.title = newTitle;
         }
         return this;
-    }
-
-    public User getOwner() {
-        return owner;
     }
 
     public String getDescription() {

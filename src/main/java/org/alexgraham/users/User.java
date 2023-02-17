@@ -1,6 +1,5 @@
 package org.alexgraham.users;
 
-import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import io.quarkus.hibernate.reactive.panache.PanacheEntityBase;
 import org.alexgraham.tasks.Task;
 import org.hibernate.annotations.GenericGenerator;
@@ -10,11 +9,11 @@ import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +34,7 @@ public class User extends PanacheEntityBase {
     @Column(nullable = false, length = 128)
     private String name;
 
-    @OneToMany(mappedBy="owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy="owner", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks;
 
     public User() {
