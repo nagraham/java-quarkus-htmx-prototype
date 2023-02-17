@@ -33,11 +33,30 @@ public class TaskResource {
     @Inject
     TaskService service;
 
+    /**
+     * Qute Templates for Task HTML views
+     */
     @CheckedTemplate
     public static class Template {
+        /**
+         * Template for completed tasks (see resources/templates/TaskResource/completed.html)
+         */
+        public static native TemplateInstance completed(Task task);
+
+        /**
+         * Template for a list of tasks (see resources/templates/TaskResource/list.html)
+         */
         public static native TemplateInstance list(List<Task> tasks);
-        public static native TemplateInstance task(Task task);
+
+        /**
+         * Template for reopened tasks (see resources/templates/TaskResource/reopened.html)
+         */
         public static native TemplateInstance reopened(Task task);
+
+        /**
+         * Template for a single task (see resources/templates/TaskResource/task.html)
+         */
+        public static native TemplateInstance task(Task task);
     }
 
     @ServerExceptionMapper
@@ -91,7 +110,8 @@ public class TaskResource {
             @RestHeader("HX-Request") boolean isHxRequest
     ) {
         return service.completeTask(taskId).map(result -> switch (result) {
-            case Task.Result.Updated ignored -> postResponse(isHxRequest, "/tasks", Response.ok());
+            case Task.Result.Updated updated -> postResponse(isHxRequest, "/tasks",
+                    Response.ok(Template.completed(updated.task())));
             case Task.Result.NotModified ignored -> Response.notModified().build();
         });
     }

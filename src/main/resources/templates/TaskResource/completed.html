@@ -1,0 +1,8 @@
+{!
+This template is used to append a completed task to the completed list by using a Out of Band Swap.
+
+For more, see https://htmx.org/attributes/hx-swap-oob/
+!}
+<div id="completed-tasks .task-list" hx-swap-oob="beforeend">
+    {#include TaskResource/task.html task=task /}
+</div>
