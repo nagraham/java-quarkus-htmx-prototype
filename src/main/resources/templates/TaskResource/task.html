@@ -18,14 +18,23 @@
          @click="if ($event.ctrlKey) { isViewingDetails = ! isViewingDetails }">
 
         {! Task completion toggle !}
-        <div class="completion-button mg-rt-3"
-             title="Click to complete this Task"
-             x-on:click="isComplete = ! isComplete"
-             hx-post="/tasks/{task.id}/complete"
-             hx-target="#task-{task.id}"
-             hx-swap="outerHTML">
-            <div class="completed-toggle" x-cloak x-show="isComplete" x-transition></div>
-        </div>
+        {#if task.isComplete()}
+            <div class="completion-button mg-rt-3"
+                x-on:click="isComplete = ! isComplete"
+                hx-post="/tasks/{task.id}/reopen"
+                hx-target="#task-{task.id}"
+                hx-swap="outerHTML">
+                <div class="completed-toggle" x-cloak x-show="isComplete" x-transition></div>
+            </div>
+        {#else}
+            <div class="completion-button mg-rt-3"
+                 x-on:click="isComplete = ! isComplete"
+                 hx-post="/tasks/{task.id}/complete"
+                 hx-target="#task-{task.id}"
+                 hx-swap="outerHTML">
+                <div class="completed-toggle" x-cloak x-show="isComplete" x-transition></div>
+            </div>
+        {/if}
 
         {! Display the title !}
         <span :class="isComplete ? 'strike-thru' : ''"

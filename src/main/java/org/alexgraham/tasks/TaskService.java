@@ -22,10 +22,22 @@ public class TaskService {
     private static final List<Task.State> DEFAULT_STATES = List.of(Task.State.Open);
 
     @ReactiveTransactional
-    public Uni<Task> completeTask(Long taskId) {
+    public Uni<Task.Result> completeTask(Long taskId) {
         return Task.<Task>findById(taskId)
                 .onItem().ifNull().failWith(new TaskNotFoundException())
-                .flatMap(task -> task.complete().persist());
+                .flatMap(task -> {
+                    if (task.isComplete()) {
+                        return Uni.createFrom().item(Task.Result.NotModified::new);
+                    } else {
+                        return task.complete().<Task>persist().map(Task.Result.Updated::new);
+                    }
+                });
+    }
+
+    @ReactiveTransactional
+    public Uni<Task> createTask(String title, UUID ownerId) {
+        // We first find the owner to verify they actually exist, before creating the task
+        return User.<User>findById(ownerId).flatMap(user -> new Task(title, user).persist());
     }
 
     /**
@@ -81,9 +93,16 @@ public class TaskService {
     }
 
     @ReactiveTransactional
-    public Uni<Task> persist(String title, UUID ownerId) {
-        // We first find the owner to verify they actually exist, before creating the task
-        return User.<User>findById(ownerId).flatMap(user -> new Task(title, user).persist());
+    public Uni<Task.Result> reopenTask(Long taskId) {
+        return Task.<Task>findById(taskId)
+                .onItem().ifNull().failWith(new TaskNotFoundException())
+                .flatMap(task -> {
+                    if (task.isOpen()) {
+                        return Uni.createFrom().item(new Task.Result.NotModified());
+                    } else {
+                        return task.reopen().<Task>persist().map(Task.Result.Updated::new);
+                    }
+                });
     }
 
     /**

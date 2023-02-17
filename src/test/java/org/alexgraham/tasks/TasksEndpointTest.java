@@ -387,7 +387,7 @@ public class TasksEndpointTest {
         }
 
         @Test
-        void whenTaskExists_alreadyComplete_isReturnedAsComplete() {
+        void whenTaskExists_alreadyComplete_returns304NotModifiedResponse() {
             User user = createUser("test-completion-user");
             Task task = createTask(user, "task-to-complete");
 
@@ -401,19 +401,13 @@ public class TasksEndpointTest {
                     .statusCode(200);
 
             // Complete it again
-            Task completedTask = given()
+            given()
                     .when()
                     .contentType(ContentType.JSON)
                     .header(new Header("X-User-Id", user.getId().toString()))
                     .post("/tasks/" + task.id + "/complete")
                     .then()
-                    .statusCode(200)
-                    .extract()
-                    .response()
-                    .getBody()
-                    .as(Task.class);
-
-            assertThat(completedTask.getState(), is(Task.State.Complete));
+                    .statusCode(304);
         }
 
         @Test
@@ -425,6 +419,79 @@ public class TasksEndpointTest {
                     .contentType(ContentType.JSON)
                     .header(new Header("X-User-Id", user.getId().toString()))
                     .post("/tasks/" + 123 + "/complete")
+                    .then()
+                    .statusCode(404);
+        }
+    }
+
+    @Nested
+    @DisplayName("Reopen Tasks")
+    class ReopenTasks {
+
+        @Test
+        void whenTaskIsComplete_shouldBecomeOpenAgain() {
+            User user = createUser("test-reopen-task-user");
+            Task task = createTask(user, "task-to-reopen");
+            completeTask(user, task.id);
+
+            Task reopenedTask = given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + task.id + "/reopen")
+                    .then()
+                    .statusCode(200)
+                    .extract()
+                    .response()
+                    .getBody()
+                    .as(Task.class);
+
+            assertThat(reopenedTask.getState(), is(Task.State.Open));
+        }
+
+        @Test
+        void whenTaskIsComplete_afterReopened_shouldBeVisibleInStandardListResults() {
+            User user = createUser("test-reopen-task-user");
+            Task task1 = createTask(user, "task-1");
+            Task task2 = createTask(user, "task-2");
+            completeTask(user, task2.id);
+
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + task2.id + "/reopen")
+                    .then()
+                    .statusCode(200);
+
+            List<Task> tasks = listTasksByUser(user);
+
+            assertThat(tasks.stream().map(Task::getTitle).toList(), contains(task1.getTitle(), task2.getTitle()));
+        }
+
+        @Test
+        void whenTaskIsOpen_return304NotModified() {
+            User user = createUser("test-reopen-task-user");
+            Task task1 = createTask(user, "task-1");
+
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + task1.id + "/reopen")
+                    .then()
+                    .statusCode(304);
+        }
+
+        @Test
+        void whenTaskDoesntExist_return404() {
+            User user = createUser("test-completion-user");
+
+            given()
+                    .when()
+                    .contentType(ContentType.JSON)
+                    .header(new Header("X-User-Id", user.getId().toString()))
+                    .post("/tasks/" + 123 + "/reopen")
                     .then()
                     .statusCode(404);
         }

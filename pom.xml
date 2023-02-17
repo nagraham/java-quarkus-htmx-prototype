@@ -63,10 +63,18 @@
 
         <!-- WEB JARS -->
 
+        <!-- HTMX: add interaction with backend with declarative API on HTML -->
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>htmx.org</artifactId>
             <version>1.8.5</version>
+        </dependency>
+
+        <!-- AlpineJS: build dynamic interactive frontend components with declarative API on HTML -->
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>alpinejs</artifactId>
+            <version>3.11.1</version>
         </dependency>
 
         <!-- for sorting components in the UX -->
@@ -117,8 +125,11 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
                 <configuration>
+                    <source>19</source>
+                    <target>19</target>
                     <compilerArgs>
                         <arg>-parameters</arg>
+                        <arg>--enable-preview</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

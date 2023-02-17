@@ -8,7 +8,7 @@
             <div class="flex-row flex-align-center">
 
                 {! Create Tasks !}
-                <form hx-post="/tasks" method="POST" hx-target="#task-list" hx-swap="beforeend">
+                <form hx-post="/tasks" method="POST" hx-target="#open-tasks .task-list" hx-swap="beforeend">
                     <input class="task-title new-task" name="title" placeholder="What do you need to do?" />
                 </form>
 
@@ -27,7 +27,9 @@
             </div>
 
             {! Display open tasks !}
-            {#include TaskResource/list.html tasks=tasks /}
+            <div id="open-tasks">
+                {#include TaskResource/list.html tasks=tasks /}
+            </div>
 
             {! Display completed tasks !}
             <template x-if="showCompleted">

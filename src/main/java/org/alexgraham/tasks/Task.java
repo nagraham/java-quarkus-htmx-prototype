@@ -56,6 +56,16 @@ public class Task extends PanacheEntity {
         }
     }
 
+    /**
+     * Models different valid (non-exceptional) Results that may happen during Task operations.
+     */
+    // DEV NOTE: This seems like a possible candidate for a generic model that could be used
+    // in other domains. However, wait for 2-3 more use cases to crop up, to identify the pattern.
+    public sealed interface Result permits Result.Updated, Result.NotModified {
+        record Updated(Task task) implements Task.Result {}
+        record NotModified() implements Task.Result {}
+    }
+
     @Column(length = 128)
     private String title;
 
@@ -88,6 +98,11 @@ public class Task extends PanacheEntity {
      */
     public Task complete() {
         this.state = State.Complete;
+        return this;
+    }
+
+    public Task reopen() {
+        this.state = State.Open;
         return this;
     }
 

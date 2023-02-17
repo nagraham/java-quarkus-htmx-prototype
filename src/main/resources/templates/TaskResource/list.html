@@ -5,7 +5,7 @@
   all the nested forms within the Task template.
 !}
 <div class="sortable" hx-post="/tasks/rerank" hx-trigger="end" hx-swap="none" hx-include="[name='item']">
-    <div class="task-list" id="task-list">
+    <div class="task-list">
         {#for task in tasks}
             {#include TaskResource/task.html task=task /}
         {/for}

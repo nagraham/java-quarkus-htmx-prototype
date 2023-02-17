@@ -1,0 +1,13 @@
+{!
+This template is used to append a Reopened task to the list by using a Out of Band Swap. In the swap,
+you can provide 2 chunks of HTML: the that will replace the target defined in the HTMX element,
+and another that will be swapped into the provided selector.
+
+In this case, we don't have one that replaces the target (because we specifically want the "reopened task"
+to be removed from the "completed task list" portion of the DOM.
+
+For more, see https://htmx.org/attributes/hx-swap-oob/
+!}
+<div id="open-tasks .task-list" hx-swap-oob="beforeend">
+    {#include TaskResource/task.html task=task /}
+</div>
