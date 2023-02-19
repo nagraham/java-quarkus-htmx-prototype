@@ -26,6 +26,13 @@ Just leave this running. It is incredibly useful for both quickly and automatica
 
 There is also a DevUI (only in dev mode) which seems neat, although I haven't yet used it much:  http://localhost:8080/q/dev/.
 
+To view the todo list, go to http://localhost:8080/my-tasks (or http://localhost:8080/, which redirects to that URI). In order to make everything work, you need to set a userId cookie. This is based on my hacky way to simulate being able to fetch data for a User based on auth/sessions/etc.
+- Using your browser's dev tools to manually set cookies.
+- Set the **name** to `userId`
+- Set the **value** to the UUID of an existing user (such as `'ed8e4579-ba54-4441-8dee-07eb25d57e4b'`, which is a user associated with a few tasks that are auto-populated in the Postgres docker DB in testing)
+- This cookie will remain set while you keep the browser open.
+
+
 ## Useful Guides
 
 - [Quarkus RESTEasy Reactive Reference](https://quarkus.io/guides/resteasy-reactive) (Writing endpoints)

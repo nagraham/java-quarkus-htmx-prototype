@@ -15,7 +15,8 @@ import javax.persistence.Table;
 import java.util.List;
 
 /**
- * This record persists the rankings of an Owner's Tasks.
+ * This record persists the rankings of an Owner's Tasks, which provides the implementation for
+ * manual sorting of Tasks.
  */
 @Entity
 @Cacheable

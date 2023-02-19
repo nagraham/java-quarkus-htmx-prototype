@@ -25,6 +25,12 @@ public class MyTaskResource {
         public static native TemplateInstance show(List<Task> tasks);
     }
 
+    /**
+     * Displays the overall Task view.
+     *
+     * @param userId    The current User who is working with their Tasks.
+     * @return          The HTML template.
+     */
     @GET
     @Produces(MediaType.TEXT_HTML)
     public Uni<TemplateInstance> show(@RestCookie String userId) {

@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * The endpoints for the Task Resource
+ */
+// DEV NOTE: It seems we should not use @Consumes on GET APIs. I had @Consumes with the associated media type,
+// but this led to a strange bug where the browser would call the JSON API if the HTTP endpoint took in @QueryParams.
 @Path("/tasks")
 @ApplicationScoped
 public class TaskResource {
@@ -116,6 +121,11 @@ public class TaskResource {
         });
     }
 
+    /**
+     * JSON Endpoint for getting a single Task.
+     * @param id    The Task to get.
+     * @return      A Task.
+     */
     @GET
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -124,6 +134,13 @@ public class TaskResource {
         return Task.findById(id);
     }
 
+    /**
+     * The JSON Endpoint for Creating a Task.
+     *
+     * @param task      The Task to create.
+     * @param userId    The User who is creating the Task.
+     * @return          The created Task.
+     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -136,6 +153,14 @@ public class TaskResource {
                         .build());
     }
 
+    /**
+     * The HTML endpoint for creating a task via a front-end from.
+     *
+     * @param title         The title of the task.
+     * @param userId        The User creating the task.
+     * @param isHxRequest   Whether the response is initiated via HTMX (else, it will return a standard 302 resp).
+     * @return              Rendered HTML with the new Task.
+     */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
@@ -148,9 +173,6 @@ public class TaskResource {
                 .map(newTask -> postResponse(isHxRequest, "/tasks", Response.ok(Template.task(newTask))
                         .header("HX-Trigger", "clear-add-task")));
     }
-
-    // DEV NOTE: It seems we should not use @Consumes on GET APIs. I had @Consumes with the associated media type,
-    // but this led to a strange bug where the browser would call the JSON API if the HTTP endpoint took in @QueryParams.
 
     /**
      * The JSON API for returning a List of Tasks belonging to the given User.
@@ -172,8 +194,17 @@ public class TaskResource {
         return service.queryByOwner(userId, states);
     }
 
-    // DEV NOTE: If you don't see any items listed, make sure you have the
-    // "userId" cookie set in your browser to a test ID (check import.sql).
+    /**
+     * The HTML API for returning a list of tasks.
+     * <p>
+     * By default, only Tasks with an "Open" {@link Task.State} will be returned. To find Tasks in
+     * other states, it is possible to filter using the state query parameters.
+     *
+     * @param userId        The User to find tasks for.
+     * @param state         An optional list of {@link Task.State}s as a filter to the results.
+     * @param isHxRequest   Whether the request was made via HTMX.
+     * @return              Rendered HTML template with the list of tasks.
+     */
     @GET
     @Consumes(MediaType.TEXT_HTML)
     @Produces(MediaType.TEXT_HTML)
@@ -208,6 +239,15 @@ public class TaskResource {
         });
     }
 
+    /**
+     * The HTML endpoint for re-opening a Task
+     *
+     * @param taskId        The id associated with the task to reopen
+     * @param userId        The userId of the User who owns the task.
+     * @param isHxRequest   Whether the response is initiated via HTMX (else, it will return a standard 302 resp).
+     * @return              200 if the Task is moved to an Open state.
+     *                      304 if the task is already Open.
+     */
     @POST
     @Path("/{id}/reopen")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -224,8 +264,20 @@ public class TaskResource {
         });
     }
 
+    /**
+     * This record is used for deserializing the input from the JSON re-rank endpoint.
+     *
+     * @param rankings  A list of Task ids representing the order the Tasks should appear in.
+     */
     private record RerankParams(List<Long> rankings) {}
 
+    /**
+     * The JSON endpoint for re-ranking the user's Tasks.
+     *
+     * @param params    The params containing re-ranked data.
+     * @param userId    The user's id.
+     * @return          Empty 200 response.
+     */
     @POST
     @Path("/rerank")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -239,6 +291,14 @@ public class TaskResource {
                 .map(ignored -> Response.ok().build());
     }
 
+    /**
+     * The HTML Endpoint for re-ranking the user's Tasks.
+     *
+     * @param ranks         A list of Task ids representing the order the Tasks should appear in.
+     * @param userId        The user's id.
+     * @param isHxRequest   Whether the response is initiated via HTMX (else, it will return a standard 302 resp).
+     * @return              200 if the rankings were successfully saved.
+     */
     @POST
     @Path("/rerank")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -310,7 +370,7 @@ public class TaskResource {
      *                          302 response based on a form submit.
      * @param path              The re-direct path (for a 302 redirect). HTMX will put this path into
      *                          the browser's nav bar.
-     * @param responseBuilder   The partially built Response builder from
+     * @param responseBuilder   The partially built Response builder.
      * @return                  The Response.
      */
     private Response postResponse(boolean isHxRequest, String path, Response.ResponseBuilder responseBuilder) {
